@@ -40,6 +40,6 @@ ObjectHolder::operator bool() const {
 }
 
 bool IsTrue(ObjectHolder object) {
-}
-
+    auto b = object.GetAs<Bool>();
+    return b->GetValue();
 }
