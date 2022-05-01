@@ -36,7 +36,7 @@ public:
     return value;
   }
 
-private:
+protected:
   T value;
 };
 
@@ -57,10 +57,15 @@ struct Method {
 
 class Class : public Object {
 public:
-  explicit Class(std::string name, std::vector<Method> methods, const Class* parent);
+  explicit Class(std::string name, std::vector<Method> methods, const Class* parent = nullptr);
   const Method* GetMethod(const std::string& name) const;
   const std::string& GetName() const;
   void Print(std::ostream& os) override;
+
+private:
+  std::string name;
+  std::vector<Method> methods;
+  const Class* parent;
 };
 
 class ClassInstance : public Object {
@@ -74,6 +79,10 @@ public:
 
   Closure& Fields();
   const Closure& Fields() const;
+
+private:
+  const Class& cls;
+  Closure fields;
 };
 
 void RunObjectsTests(TestRunner& test_runner);
