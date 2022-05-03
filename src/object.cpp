@@ -48,9 +48,10 @@ const Method* Class::GetMethod(const std::string& name) const
 }
 
 
-void Class::Print(ostream& os) {
+void Class::Print(ostream& os)
+{
     // ???
-    os << "???";
+    os << name;
 }
 
 // ClassInstance
@@ -59,8 +60,8 @@ ClassInstance::ClassInstance(const Class& cls)
 {
 }
 
-void ClassInstance::Print(std::ostream& os) {
-    // ???
+void ClassInstance::Print(std::ostream& os)
+{
     os << "???";
 }
 
@@ -93,5 +94,13 @@ ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<Ob
         tempClosure[met->formal_params[i]] = actual_args[i];
 
     return met->body->Execute(tempClosure);
+}
+
+// None
+//
+
+void None::Print(std::ostream& os)
+{
+    os << "None";
 }
 } /* namespace Runtime */

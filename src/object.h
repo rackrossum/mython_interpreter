@@ -85,6 +85,12 @@ private:
   Closure fields;
 };
 
+class None : public Object
+{
+public:
+    void Print(std::ostream& os) override;
+};
+
 void RunObjectsTests(TestRunner& test_runner);
 
 }
