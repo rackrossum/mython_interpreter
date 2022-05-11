@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Iobject.h"
 #include "object_holder.h"
 
 #include <ostream>
@@ -17,36 +18,23 @@ class TestRunner;
 namespace Runtime {
 
 
-class Object {
+class Object : public IObject
+{
 public:
-  virtual ~Object() = default;
-  virtual void Print(std::ostream& os) = 0;
-
-  enum class Type
-  {
-      Number,
-      String,
-      Bool,
-      Class,
-      Instance,
-      None,
-      Unknown
-  };
+    using typename Runtime::IObject::Type;
 
     Object (Type type)
         : type(type)
     {}
 
-    auto GetType() const
-    {
-        return type;
-    }
+    Type GetType() const override;
 
-  Type type;
+    Type type;
 };
 
 template <typename T>
 class ValueObject : public Object {
+    using typename Runtime::IObject::Type;
 protected:
     ValueObject(Type type, const T& value)
         : Object(type), value(value)
@@ -72,6 +60,7 @@ protected:
 
 class Number : public ValueObject<int>
 {
+    using typename Runtime::IObject::Type;
 public:
     Number(int n)
         : ValueObject(Type::Number, n)
@@ -80,6 +69,7 @@ public:
 
 class Bool : public ValueObject<bool>
 {
+    using typename Runtime::IObject::Type;
 public:
     Bool(bool b)
         : ValueObject(Type::Bool, b)
@@ -90,6 +80,7 @@ public:
 
 class String : public ValueObject<std::string>
 {
+    using typename Runtime::IObject::Type;
 public:
     String(std::string&& str)
         : ValueObject(Type::String, std::move(str))

@@ -10,17 +10,12 @@
 
 using namespace std;
 
-void Indent(std::ostream &os, size_t& pos)
-{
-    os << std::string((++pos) * 2, ' ');
-}
-
-void Dedent(std::ostream &os, size_t& pos)
-{
-    os << std::string((--pos) * 2, ' ');
-}
-
 namespace Runtime {
+typename Object::Type Object::GetType() const
+{
+    return type;
+}
+
 void Bool::Print(std::ostream& os)
 {
     os << (value ? "True" : "False");

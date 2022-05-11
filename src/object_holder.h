@@ -5,6 +5,8 @@
 #include <typeinfo>
 #include <unordered_map>
 
+#include "Iobject.h"
+
 class TestRunner;
 
 namespace Runtime {
@@ -20,7 +22,7 @@ struct TypeError : std::runtime_error
     {}
 };
 
-class Object;
+class IObject;
 
 class ObjectHolder {
 public:
@@ -33,16 +35,16 @@ public:
     );
   }
 
-  static ObjectHolder Share(Object& object);
+  static ObjectHolder Share(IObject& object);
   static ObjectHolder None();
 
-  Object& operator*();
-  const Object& operator*() const;
-  Object* operator->();
-  const Object* operator->() const;
+  IObject& operator*();
+  const IObject& operator*() const;
+  IObject* operator->();
+  const IObject* operator->() const;
 
-  Object* Get();
-  const Object* Get() const;
+  IObject* Get();
+  const IObject* Get() const;
 
   template <typename T>
   T* TryAs() {
@@ -72,15 +74,14 @@ public:
   explicit operator bool() const;
 
 private:
-  ObjectHolder(std::shared_ptr<Object> data) : data(std::move(data)) {
+  ObjectHolder(std::shared_ptr<IObject> data) : data(std::move(data)) {
   }
 
-  std::shared_ptr<Object> data;
+  std::shared_ptr<IObject> data;
 };
 
 using Closure = std::unordered_map<std::string, ObjectHolder>;
 
-bool IsTrue(ObjectHolder object);
 
 void RunObjectHolderTests(TestRunner& tr);
 
