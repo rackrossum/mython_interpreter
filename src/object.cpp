@@ -29,7 +29,7 @@ void Bool::Print(std::ostream& os)
 
 // Class
 Class::Class(std::string name, std::vector<Method> methods, const Class* parent)
-: name(std::move(name)), methods(std::move(methods)), parent(parent)
+: Object(Type::Class), name(std::move(name)), methods(std::move(methods)), parent(parent)
 {
 }
 
@@ -51,18 +51,23 @@ const Method* Class::GetMethod(const std::string& name) const
 void Class::Print(ostream& os)
 {
     // ???
-    os << name;
+    os << this;
 }
 
 // ClassInstance
 ClassInstance::ClassInstance(const Class& cls)
-: cls(cls)
+: Object(Type::Instance), cls(cls)
 {
 }
 
 void ClassInstance::Print(std::ostream& os)
 {
-    os << "???";
+    const char* str = "__str__";
+    if (HasMethod(str, 0))
+        Call(str, {})->Print(os);
+
+    //???
+    os << this;
 }
 
 bool ClassInstance::HasMethod(const std::string& method, size_t argument_count) const {

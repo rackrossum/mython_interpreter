@@ -16,18 +16,48 @@ class TestRunner;
 
 namespace Runtime {
 
+
 class Object {
 public:
   virtual ~Object() = default;
   virtual void Print(std::ostream& os) = 0;
+
+  enum class Type
+  {
+      Number,
+      String,
+      Bool,
+      Class,
+      Instance,
+      None,
+      Unknown
+  };
+
+    Object (Type type)
+        : type(type)
+    {}
+
+    auto GetType() const
+    {
+        return type;
+    }
+
+  Type type;
 };
 
 template <typename T>
 class ValueObject : public Object {
-public:
-  ValueObject(T v) : value(v) {
-  }
+protected:
+    ValueObject(Type type, const T& value)
+        : Object(type), value(value)
+    {}
 
+    ValueObject(Type type, T&& value)
+        : Object(type), value(std::move(value))
+    {}
+
+
+public:
   void Print(std::ostream& os) override {
     os << value;
   }
@@ -40,13 +70,34 @@ protected:
   T value;
 };
 
-using String = ValueObject<std::string>;
-using Number = ValueObject<int>;
-
-class Bool : public ValueObject<bool> {
+class Number : public ValueObject<int>
+{
 public:
-  using ValueObject<bool>::ValueObject;
-  void Print(std::ostream& os) override;
+    Number(int n)
+        : ValueObject(Type::Number, n)
+    {}
+};
+
+class Bool : public ValueObject<bool>
+{
+public:
+    Bool(bool b)
+        : ValueObject(Type::Bool, b)
+    {}
+
+    void Print(std::ostream& os) override;
+};
+
+class String : public ValueObject<std::string>
+{
+public:
+    String(std::string&& str)
+        : ValueObject(Type::String, std::move(str))
+    {}
+
+    String(const std::string& str)
+        : ValueObject(Type::String, str)
+    {}
 };
 
 struct Method {
