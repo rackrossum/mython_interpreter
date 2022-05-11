@@ -71,6 +71,9 @@ public:
      return const_cast<T*>(static_cast<const ObjectHolder*>(this)->TryAs<T>());
   }
 
+  typename IObject::Type GetType() const;
+  bool IsSameType(const ObjectHolder& other) const;
+
   explicit operator bool() const;
 
 private:

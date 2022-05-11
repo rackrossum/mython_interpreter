@@ -37,4 +37,14 @@ const IObject* ObjectHolder::Get() const {
 ObjectHolder::operator bool() const {
   return Get();
 }
+
+typename IObject::Type ObjectHolder::GetType() const
+{
+    return data->GetType();
+}
+
+bool ObjectHolder::IsSameType(const ObjectHolder& other) const
+{
+    return data->GetType() == other->GetType();
+}
 }
