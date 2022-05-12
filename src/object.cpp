@@ -98,6 +98,9 @@ ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<Ob
 
 // None
 //
+None::None()
+    :Object(Type::None)
+{}
 
 void None::Print(std::ostream& os)
 {

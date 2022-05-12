@@ -130,6 +130,7 @@ private:
 class None : public Object
 {
 public:
+    explicit None();
     void Print(std::ostream& os) override;
 };
 
