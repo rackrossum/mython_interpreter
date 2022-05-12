@@ -22,7 +22,6 @@ struct TypeError : std::runtime_error
     {}
 };
 
-class IObject;
 
 class ObjectHolder {
 public:
