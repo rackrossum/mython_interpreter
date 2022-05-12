@@ -20,6 +20,6 @@ public:
       Unknown
   };
 
-  virtual Type GetType() const;
+  virtual Type GetType() const = 0;
 };
 }
