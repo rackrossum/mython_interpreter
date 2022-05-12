@@ -181,6 +181,5 @@ namespace Parse {
             bool lastIndentCounted = false;
     };
 
-    void RunLexerTests(TestRunner& test_runner);
 
 } /* namespace Parse */

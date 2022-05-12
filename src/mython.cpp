@@ -4,7 +4,7 @@
 #include "lexer.h"
 #include "parse.h"
 
-#include <test_runner.h>
+#include "test_runner.h"
 
 #include <memory>
 #include <string>
@@ -121,7 +121,6 @@ void TestAll() {
   Runtime::RunObjectHolderTests(tr);
   Runtime::RunObjectsTests(tr);
   Ast::RunUnitTests(tr);
-  Parse::RunLexerTests(tr);
   TestParseProgram(tr);
 
   RUN_TEST(tr, TestSimplePrints);
