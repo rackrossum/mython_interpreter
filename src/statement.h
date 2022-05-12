@@ -3,6 +3,7 @@
 #include "object_holder.h"
 #include "object.h"
 
+#include <stdexcept>
 #include <unordered_map>
 #include <string>
 #include <functional>
@@ -16,6 +17,12 @@ namespace Ast {
 struct Statement {
   virtual ~Statement() = default;
   virtual ObjectHolder Execute(Runtime::Closure& closure) = 0;
+
+  template <typename T>
+  T* TryAs()
+  {
+      return dynamic_cast<T>(this);
+  }
 };
 
 template <typename T>
@@ -43,8 +50,8 @@ struct VariableValue : Statement {
 };
 
 struct Assignment : Statement {
-  std::string var_name;
-  std::unique_ptr<Statement> right_value;
+  std::string var;
+  std::unique_ptr<Statement> rv;
 
   Assignment(std::string var, std::unique_ptr<Statement> rv);
   ObjectHolder Execute(Runtime::Closure& closure) override;
@@ -107,6 +114,8 @@ struct NewInstance : Statement {
 class UnaryOperation : public Statement {
 public:
   UnaryOperation(std::unique_ptr<Statement> argument) : argument(std::move(argument)) {
+      if (!argument)
+          throw std::runtime_error("UnaryOperation: arg is missed");
   }
 
 protected:
@@ -125,6 +134,8 @@ public:
     : lhs(std::move(lhs))
     , rhs(std::move(rhs))
   {
+      if (!lhs || !rhs)
+          throw std::runtime_error("BinaryOperation: args are missed");
   }
 
 protected:
