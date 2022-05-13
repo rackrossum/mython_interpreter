@@ -31,27 +31,6 @@ std::vector<ObjectHolder> ActualizeArgs(std::vector<pStatement>& args, Closure& 
     return res;
 }
 
-ObjectHolder& GetObject(const std::vector<std::string>& ids, Closure& closure)
-{
-    if (ids.empty())
-        throw std::runtime_error("ids is empty");
-
-
-    auto curClosure = closure;
-    auto idIt = ids.begin();
-    auto last = std::prev(ids.end());
-    while (idIt != last)
-    {
-        auto it = curClosure.find(*idIt);
-        if (it == curClosure.end())
-            throw std::runtime_error("Object " + *idIt + " wasn't found");
-
-        auto cls = it->second.GetAs<Runtime::ClassInstance>();
-        curClosure = cls->Fields();
-    }
-
-    return closure.at(*idIt);
-}
 
 template <typename T>
 std::optional<std::pair<T*, T*>> TryAs(ObjectHolder left, ObjectHolder right)
