@@ -108,7 +108,7 @@ FieldAssignment::FieldAssignment(
   , field_name(std::move(field_name))
   , right_value(std::move(rv))
 {
-    if (field_name.empty())
+    if (this->field_name.empty())
         throw std::runtime_error("FieldAssignment: field name is empty");
 }
 
