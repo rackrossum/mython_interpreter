@@ -71,17 +71,54 @@ std::optional<std::pair<T*, T*>> TryAs(ObjectHolder left, ObjectHolder right)
 VariableValue::VariableValue(std::string var_name)
     :dotted_ids({std::move(var_name)})
 {
+    if (this->dotted_ids.empty())
+        throw std::runtime_error("VariableValue: dotted_ids are empty");
 }
 
 VariableValue::VariableValue(std::vector<std::string> dotted_ids)
 : dotted_ids(std::move(dotted_ids))
 {
+    if (this->dotted_ids.empty())
+        throw std::runtime_error("VariableValue: dotted_ids are empty");
 }
 
 
 ObjectHolder VariableValue::Execute(Closure& closure)
 {
-    return GetObject(dotted_ids, closure);
+    using ObjType = decltype(ObjectHolder().GetType());
+    auto Throw = [](const std::string& msg)
+    { throw std::runtime_error("VariableValue: " + msg); };
+
+    auto Concatenate = [](const decltype(VariableValue::dotted_ids)& v)
+    {
+        std::string res = v[0];
+        for (size_t i = 1; i < v.size(); ++i)
+            res += "." + v[i];
+        return res;
+    };
+
+    const auto& ids = dotted_ids;
+    auto concatIds = Concatenate(ids);
+
+    auto& clsr = closure;
+    for (size_t i = 0, end = ids.size() - 1; i < end; ++i)
+    {
+        auto clsrIt = clsr.find(ids[i]);
+        if (clsrIt == clsr.end()) 
+            Throw("\"" + clsrIt->first + "\" wasnt found in closure. Ids: " + concatIds);
+        
+        if (i != end - 1)
+        {
+            if (clsrIt->second->GetType() != ObjType::Instance)
+                Throw("\"" + clsrIt->first + "\" isnt class Instance. Ids: " + concatIds);
+
+            clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
+        }
+    }
+
+    auto& res = clsr[ids.back()];
+    
+    return res;
 }
 
 // Assignment
@@ -126,36 +163,26 @@ ObjectHolder FieldAssignment::Execute(Runtime::Closure& closure)
         return res;
     };
 
+    using Ids = decltype(object.dotted_ids);
     const auto& ids = object.dotted_ids;
     auto concatIds = Concatenate(ids);
-    if (ids.empty() || ids[0] != "self")
+    if (ids[0] != "self")
         Throw("no self in " + concatIds);
 
-    auto clsIt = closure.find("self");
-    if (clsIt == closure.end())
-        Throw("closure doesnt have \"self\"");
+    if (closure.find("self") == closure.end())
+        Throw("no self in closure");
 
-    if (clsIt->second->GetType() != ObjType::Instance)
-        Throw("self doesnt point to class instance");
+    auto cls = closure.at("self");
+    if (cls->GetType() != ObjType::Instance)
+        Throw("self doesnt point to instance");
 
-    auto cls = clsIt->second.GetAs<Runtime::ClassInstance>();
-    auto& fields = cls->Fields();
-    for (int i = 1; i < ids.size(); ++i)
-    {
-        auto fieldIt = fields.find(ids[i]);
-        if (fieldIt == fields.end()) 
-            Throw("\"" + fieldIt->first + "\" isnt part of class");
+    Ids newIds(std::next(ids.begin()), ids.end());
+    newIds.push_back(field_name);
 
-        if (fieldIt->second->GetType() != ObjType::Instance)
-            Throw("\"" + fieldIt->first + "\" isnt class instance");
+    auto obj = VariableValue(newIds).Execute(cls.GetAs<Runtime::ClassInstance>()->Fields());
+    obj = right_value->Execute(closure);
 
-        fields = fieldIt->second.GetAs<Runtime::ClassInstance>()->Fields();
-    }
-
-    auto& res = fields[field_name];
-    res = right_value->Execute(closure);
-    
-    return res;
+    return obj;
 }
 
 // Print

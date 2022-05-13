@@ -134,7 +134,7 @@ public:
     : lhs(std::move(lhs))
     , rhs(std::move(rhs))
   {
-      if (!lhs || !rhs)
+      if (!this->lhs || !this->rhs)
           throw std::runtime_error("BinaryOperation: args are missed");
   }
 
