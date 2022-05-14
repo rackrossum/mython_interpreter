@@ -37,7 +37,12 @@ const Method* Class::GetMethod(const std::string& name) const
 {
     auto it = std::find_if(methods.cbegin(), methods.cend(), [&name](const auto& method){ return method.name == name;});
     if (it == methods.cend())
+    {
+        if (parent != nullptr)
+            return parent->GetMethod(name);
+
         return nullptr;
+    }
 
     return &*it;
 }
