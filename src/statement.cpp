@@ -115,7 +115,7 @@ ObjectHolder VariableValue::Execute(Closure& closure)
 
     auto res = it->second;
     if (!res)
-        Throw(VAR_STR, Concatenate(dotted_ids) + " is empty");
+        return ObjectHolder::Own(Runtime::None());
     
     return res;
 }
