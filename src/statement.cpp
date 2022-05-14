@@ -252,9 +252,8 @@ ObjectHolder Stringify::Execute(Closure& closure)
 
     std::ostringstream os;
     argument->Execute(closure)->Print(os);
-    ObjectHolder res;
-    res.Own(Runtime::String(os.str()));
-    return res;
+    
+    return ObjectHolder::Own(Runtime::String(os.str()));
 }
 
 // BinaryOps

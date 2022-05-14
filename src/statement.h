@@ -114,7 +114,7 @@ struct NewInstance : Statement {
 class UnaryOperation : public Statement {
 public:
   UnaryOperation(std::unique_ptr<Statement> argument) : argument(std::move(argument)) {
-      if (!argument)
+      if (!this->argument)
           throw std::runtime_error("UnaryOperation: arg is missed");
   }
 

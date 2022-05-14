@@ -66,9 +66,8 @@ void ClassInstance::Print(std::ostream& os)
     const char* str = "__str__";
     if (HasMethod(str, 0))
         Call(str, {})->Print(os);
-
-    //???
-    os << this;
+    else
+        os << this;
 }
 
 bool ClassInstance::HasMethod(const std::string& method, size_t argument_count) const {
