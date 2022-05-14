@@ -7,6 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 add_executable(${PROJECT_NAME} 
 comparators.cpp
 lexer.cpp
+lexer_test.cpp
 mython.cpp
 object.cpp
 object_holder.cpp

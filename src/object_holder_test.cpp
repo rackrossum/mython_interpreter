@@ -1,7 +1,7 @@
 #include "object_holder.h"
 #include "object.h"
 
-#include <test_runner.h>
+#include "test_runner.h"
 
 #include <sstream>
 
@@ -9,7 +9,7 @@ using namespace std;
 
 namespace Runtime {
 
-class Logger : public Object {
+class Logger : public Runtime::None {
 public:
   static int instance_count;
 
@@ -95,7 +95,7 @@ void TestMove() {
     ASSERT_EQUAL(Logger::instance_count, 0);
     auto one = ObjectHolder::Own(Logger());
     ASSERT_EQUAL(Logger::instance_count, 1);
-    Object* stored = one.Get();
+    IObject*  stored = one.Get();
     ObjectHolder two = std::move(one);
     ASSERT_EQUAL(Logger::instance_count, 1);
 
