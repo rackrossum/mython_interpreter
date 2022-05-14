@@ -75,13 +75,10 @@ Closure& GetClosure(Closure& outer, const std::vector<std::string>& dotted_ids, 
         if (clsrIt == clsr.end()) 
             Throw(scope, "\"" + clsrIt->first + "\" wasnt found in closure. Ids: " + Concatenate(ids));
         
-        if (i != end - 1)
-        {
-            if (clsrIt->second->GetType() != Runtime::IObject::Type::Instance)
-                Throw(scope, "\"" + clsrIt->first + "\" isnt class Instance. Ids: " + Concatenate(ids));
+        if (clsrIt->second->GetType() != Runtime::IObject::Type::Instance)
+            Throw(scope, "\"" + clsrIt->first + "\" isnt class Instance. Ids: " + Concatenate(ids));
 
-            clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
-        }
+        clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
     }
 
     return clsr;
@@ -241,9 +238,7 @@ ObjectHolder NewInstance::Execute(Runtime::Closure& closure)
     if (cls.HasMethod(initFunc, actualArgs.size()))
         cls.Call(initFunc, actualArgs);
 
-    ObjectHolder res;
-    res.Own(std::move(cls));
-    return res;
+    return ObjectHolder::Own(std::move(cls));
 }
 
 // Stringify
