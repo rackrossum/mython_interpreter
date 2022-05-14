@@ -53,6 +53,7 @@ void Class::Print(ostream& os)
 ClassInstance::ClassInstance(const Class& cls)
 : Object(Type::Instance), cls(cls)
 {
+    fields["self"] = ObjectHolder::Share(*this);
 }
 
 void ClassInstance::Print(std::ostream& os)
@@ -93,7 +94,8 @@ ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<Ob
     for (size_t i = 0; i < actual_args.size(); ++i)
         tempClosure[met->formal_params[i]] = actual_args[i];
 
-    return met->body->Execute(tempClosure);
+    auto res = met->body->Execute(tempClosure);
+    return res;
 }
 
 // None

@@ -1,4 +1,5 @@
 #include "statement.h"
+#include "Iobject.h"
 #include "object.h"
 #include "object_holder.h"
 
@@ -20,7 +21,27 @@ namespace Ast {
 using Runtime::Closure;
 using pStatement = std::unique_ptr<Statement>;
 
+namespace
+{
+    const std::string VAR_STR = "VariableValue";
+    const std::string FIELD_STR = "FieldAssignment";
+}
+
 // Free
+//
+void Throw(const std::string& scope, const std::string& message)
+{
+    throw std::runtime_error(scope + ": " + message);
+}
+
+std::string Concatenate(const vector<std::string>& v)
+{
+    std::string res = v[0];
+    for (size_t i = 1; i < v.size(); ++i)
+        res += "." + v[i];
+    return res;
+}
+
 std::vector<ObjectHolder> ActualizeArgs(std::vector<pStatement>& args, Closure& closure)
 {
     std::vector<ObjectHolder> res;
@@ -44,6 +65,29 @@ std::optional<std::pair<T*, T*>> TryAs(ObjectHolder left, ObjectHolder right)
 }
 
 
+Closure& GetClosure(Closure& outer, const std::vector<std::string>& dotted_ids, const std::string& scope)
+{
+    auto& clsr = outer;
+    const auto& ids = dotted_ids;
+    for (size_t i = 0, end = ids.size() - 1; i < end; ++i)
+    {
+        auto clsrIt = clsr.find(ids[i]);
+        if (clsrIt == clsr.end()) 
+            Throw(scope, "\"" + clsrIt->first + "\" wasnt found in closure. Ids: " + Concatenate(ids));
+        
+        if (i != end - 1)
+        {
+            if (clsrIt->second->GetType() != Runtime::IObject::Type::Instance)
+                Throw(scope, "\"" + clsrIt->first + "\" isnt class Instance. Ids: " + Concatenate(ids));
+
+            clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
+        }
+    }
+
+    return clsr;
+}
+
+
 // VariableValue
 //
 
@@ -51,51 +95,30 @@ VariableValue::VariableValue(std::string var_name)
     :dotted_ids({std::move(var_name)})
 {
     if (this->dotted_ids.empty())
-        throw std::runtime_error("VariableValue: dotted_ids are empty");
+        Throw(VAR_STR, "dotted_ids are empty");
 }
 
 VariableValue::VariableValue(std::vector<std::string> dotted_ids)
 : dotted_ids(std::move(dotted_ids))
 {
     if (this->dotted_ids.empty())
-        throw std::runtime_error("VariableValue: dotted_ids are empty");
+        Throw(VAR_STR, "dotted_ids are empty");
 }
 
 
 ObjectHolder VariableValue::Execute(Closure& closure)
 {
     using ObjType = decltype(ObjectHolder().GetType());
-    auto Throw = [](const std::string& msg)
-    { throw std::runtime_error("VariableValue: " + msg); };
 
-    auto Concatenate = [](const decltype(VariableValue::dotted_ids)& v)
-    {
-        std::string res = v[0];
-        for (size_t i = 1; i < v.size(); ++i)
-            res += "." + v[i];
-        return res;
-    };
+    closure = GetClosure(closure, dotted_ids, VAR_STR);
 
-    const auto& ids = dotted_ids;
-    auto concatIds = Concatenate(ids);
+    auto it = closure.find(dotted_ids.back());
+    if (it == closure.end())
+        Throw(VAR_STR, Concatenate(dotted_ids) + " cant be found");
 
-    auto& clsr = closure;
-    for (size_t i = 0, end = ids.size() - 1; i < end; ++i)
-    {
-        auto clsrIt = clsr.find(ids[i]);
-        if (clsrIt == clsr.end()) 
-            Throw("\"" + clsrIt->first + "\" wasnt found in closure. Ids: " + concatIds);
-        
-        if (i != end - 1)
-        {
-            if (clsrIt->second->GetType() != ObjType::Instance)
-                Throw("\"" + clsrIt->first + "\" isnt class Instance. Ids: " + concatIds);
-
-            clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
-        }
-    }
-
-    auto& res = clsr[ids.back()];
+    auto res = it->second;
+    if (!res)
+        Throw(VAR_STR, Concatenate(dotted_ids) + " is empty");
     
     return res;
 }
@@ -125,43 +148,18 @@ FieldAssignment::FieldAssignment(
   , right_value(std::move(rv))
 {
     if (this->field_name.empty())
-        throw std::runtime_error("FieldAssignment: field name is empty");
+        Throw(FIELD_STR, "field name is empty");
 }
 
 ObjectHolder FieldAssignment::Execute(Runtime::Closure& closure)
 {
-    using ObjType = decltype(ObjectHolder().GetType());
-    auto Throw = [](const std::string& msg)
-    { throw std::runtime_error("FieldAssigment: " + msg); };
+    auto pCls = object.Execute(closure);
+    if (pCls->GetType() != Runtime::IObject::Type::Instance)
+        Throw(FIELD_STR, "");
 
-    auto Concatenate = [](const decltype(VariableValue::dotted_ids)& v)
-    {
-        std::string res = v[0];
-        for (size_t i = 1; i < v.size(); ++i)
-            res += "." + v[i];
-        return res;
-    };
-
-    using Ids = decltype(object.dotted_ids);
-    const auto& ids = object.dotted_ids;
-    auto concatIds = Concatenate(ids);
-    if (ids[0] != "self")
-        Throw("no self in " + concatIds);
-
-    if (closure.find("self") == closure.end())
-        Throw("no self in closure");
-
-    auto cls = closure.at("self");
-    if (cls->GetType() != ObjType::Instance)
-        Throw("self doesnt point to instance");
-
-    Ids newIds(std::next(ids.begin()), ids.end());
-    newIds.push_back(field_name);
-
-    auto obj = VariableValue(newIds).Execute(cls.GetAs<Runtime::ClassInstance>()->Fields());
-    obj = right_value->Execute(closure);
-
-    return obj;
+    auto &res = pCls.GetAs<Runtime::ClassInstance>()->Fields()[field_name];
+    res = right_value->Execute(closure);
+    return res;
 }
 
 // Print
@@ -311,9 +309,7 @@ ObjectHolder CallOperatorNums(std::pair<Runtime::Number*, Runtime::Number*> p, O
             throw std::runtime_error("Wrong operator for numbers");
     }
 
-    ObjectHolder res;
-    res.Own(Runtime::Number(val));
-    return res;
+    return ObjectHolder::Own(Runtime::Number(val));
 }
 
 ObjectHolder CallOperatorBool(std::pair<Runtime::Bool*, Runtime::Bool*> p, Op op)
@@ -335,9 +331,7 @@ ObjectHolder CallOperatorBool(std::pair<Runtime::Bool*, Runtime::Bool*> p, Op op
             throw std::runtime_error("Wrong operator for bools");
     }
 
-    ObjectHolder res;
-    res.Own(Runtime::Bool(val));
-    return res;
+    return ObjectHolder::Own(Runtime::Bool(val));
 }
 
 
