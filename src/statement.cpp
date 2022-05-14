@@ -67,21 +67,21 @@ std::optional<std::pair<T*, T*>> TryAs(ObjectHolder left, ObjectHolder right)
 
 Closure& GetClosure(Closure& outer, const std::vector<std::string>& dotted_ids, const std::string& scope)
 {
-    auto& clsr = outer;
+    auto* clsr = &outer;
     const auto& ids = dotted_ids;
     for (size_t i = 0, end = ids.size() - 1; i < end; ++i)
     {
-        auto clsrIt = clsr.find(ids[i]);
-        if (clsrIt == clsr.end()) 
+        auto clsrIt = clsr->find(ids[i]);
+        if (clsrIt == clsr->end()) 
             Throw(scope, "\"" + clsrIt->first + "\" wasnt found in closure. Ids: " + Concatenate(ids));
         
         if (clsrIt->second->GetType() != Runtime::IObject::Type::Instance)
             Throw(scope, "\"" + clsrIt->first + "\" isnt class Instance. Ids: " + Concatenate(ids));
 
-        clsr = clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields();
+        clsr = &(clsrIt->second.GetAs<Runtime::ClassInstance>()->Fields());
     }
 
-    return clsr;
+    return *clsr;
 }
 
 
@@ -107,10 +107,10 @@ ObjectHolder VariableValue::Execute(Closure& closure)
 {
     using ObjType = decltype(ObjectHolder().GetType());
 
-    closure = GetClosure(closure, dotted_ids, VAR_STR);
+    auto& inner = GetClosure(closure, dotted_ids, VAR_STR);
 
-    auto it = closure.find(dotted_ids.back());
-    if (it == closure.end())
+    auto it = inner.find(dotted_ids.back());
+    if (it == inner.end())
         Throw(VAR_STR, Concatenate(dotted_ids) + " cant be found");
 
     auto res = it->second;
