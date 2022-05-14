@@ -187,6 +187,7 @@ ObjectHolder Print::Execute(Closure& closure)
         (*output) << " ";
         (*it)->Execute(closure).Get()->Print(*output);
     }
+    (*output) << std::endl;
 
     return ObjectHolder();
 }
