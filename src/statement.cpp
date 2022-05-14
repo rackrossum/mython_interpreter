@@ -421,7 +421,7 @@ ObjectHolder Compound::Execute(Closure& closure)
             return res;
     }
 
-    return ObjectHolder::Own(Runtime::None());
+    return ObjectHolder();
 }
 
 ObjectHolder Return::Execute(Closure& closure)
