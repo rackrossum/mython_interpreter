@@ -140,6 +140,83 @@ RunMythonProgram(input, output);
 ASSERT_EQUAL(output.str(), "stringstringstring\n");
 }
 
+void TestCase6()
+{
+    istringstream input(R"(
+x = 4
+y = 5
+
+if x > y:
+  print "x > y"
+else:
+  print "x <= y"
+
+if x > 0:
+  if y < 0:
+    print "y < 0"
+  else:
+    print "y >= 0"
+else:
+  print 'x <= 0'
+
+x = 3
+y = -3
+
+if x > 0:
+  if y < 0:
+    print "y < 0"
+else:
+  print 'x <= 0'
+
+x = -4
+y = -4
+
+if x > 0:
+  if y < 0:
+    print "y < 0"
+else:
+  print 'x <= 0'
+
+x = ""
+
+if x:
+  print '"" is True'
+else:
+  print '"" is False'
+
+x = 'non-empty string'
+
+if x:
+  print 'non-empty string is True'
+else:
+  print 'non-empty string is False'
+
+x = 0
+
+if x:
+  print '0 is True'
+else:
+  print '0 is False'
+
+x = 100
+
+if x:
+  print '100 is True'
+else:
+  print '100 is False'
+
+x = None
+
+if x:
+  print 'None is True'
+else:
+  print 'None is False'
+)");
+
+ostringstream output;
+RunMythonProgram(input, output);
+}
+
 void TestAll() {
   TestRunner tr;
   Runtime::RunObjectHolderTests(tr);
@@ -153,4 +230,5 @@ void TestAll() {
   RUN_TEST(tr, TestArithmetics);
   RUN_TEST(tr, TestVariablesArePointers);
   RUN_TEST(tr, TestCase3);
+  RUN_TEST(tr, TestCase6);
 }
