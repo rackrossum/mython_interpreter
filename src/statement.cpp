@@ -272,8 +272,6 @@ namespace {
         Sub,
         Mult,
         Div,
-        And,
-        Or
     };
 
     std::map<Op, std::string> opToStr = {
@@ -281,8 +279,6 @@ namespace {
         {Op::Sub, "__sub__"},
         {Op::Mult, "__mult__"},
         {Op::Div, "__div__"},
-        {Op::And, "__and__"},
-        {Op::Or, "__or__"}
     };
 }
 
@@ -314,28 +310,6 @@ ObjectHolder CallOperatorNums(std::pair<Runtime::Number*, Runtime::Number*> p, O
     return ObjectHolder::Own(Runtime::Number(val));
 }
 
-ObjectHolder CallOperatorBool(std::pair<Runtime::Bool*, Runtime::Bool*> p, Op op)
-{
-    auto* left = p.first;
-    auto* right = p.second;
-    bool val;
-    
-    const auto& leftV = left->GetValue(), rightV = right->GetValue();
-    switch (op)
-    {
-        case Op::And:
-            val = leftV && rightV;
-            break;
-        case Op::Or:
-            val = leftV || rightV;
-            break;
-        default:
-            throw std::runtime_error("Wrong operator for bools");
-    }
-
-    return ObjectHolder::Own(Runtime::Bool(val));
-}
-
 
 std::optional<ObjectHolder> CallOperatorCls(ObjectHolder left, ObjectHolder right, Op op)
 {
@@ -349,25 +323,16 @@ std::optional<ObjectHolder> CallOperatorCls(ObjectHolder left, ObjectHolder righ
 
 ObjectHolder CallOperator(ObjectHolder left, ObjectHolder right, Op op)
 {
-    if (op == Op::And || op == Op::Or)
+    if (op == Op::Add)
     {
-        auto bools = TryAs<Runtime::Bool>(left, right);
-        if (bools)
-            return CallOperatorBool(*bools, op);
+        auto strs = TryAs<Runtime::String>(left, right);
+        if (strs)
+            return ObjectHolder::Own(Runtime::String(strs->first->GetValue() + strs->second->GetValue()));
     }
-    else
-    {
-        if (op == Op::Add)
-        {
-            auto strs = TryAs<Runtime::String>(left, right);
-            if (strs)
-                return ObjectHolder::Own(Runtime::String(strs->first->GetValue() + strs->second->GetValue()));
-        }
 
-        auto nums = TryAs<Runtime::Number>(left, right);
-        if (nums)
-            return CallOperatorNums(*nums, op);
-    }
+    auto nums = TryAs<Runtime::Number>(left, right);
+    if (nums)
+        return CallOperatorNums(*nums, op);
 
     auto cls = left.TryAs<Runtime::ClassInstance>();
     if (cls)
@@ -407,13 +372,13 @@ Result Div::Execute(Runtime::Closure& closure)
 Result Or::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
-    return CallOperator(left, right, Op::Or);
+    return ObjectHolder::Own(Runtime::Bool(left->IsTrue() || right->IsTrue()));
 }
 
 Result And::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
-    return CallOperator(left, right, Op::And);
+    return ObjectHolder::Own(Runtime::Bool(left->IsTrue() && right->IsTrue()));
 }
 
 // Compound
@@ -467,7 +432,7 @@ Result IfElse::Execute(Runtime::Closure& closure) {
         throw std::runtime_error("No If Body in IfElseBlock");
 
     Result res;
-    if (condition->Execute(closure).GetAs<Runtime::Bool>()->GetValue() == true)
+    if (condition->Execute(closure)->IsTrue())
         res = if_body->Execute(closure);
     else if (else_body)
         res = else_body->Execute(closure);

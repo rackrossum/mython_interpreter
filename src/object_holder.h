@@ -87,6 +87,8 @@ using Closure = std::unordered_map<std::string, ObjectHolder>;
 
 void RunObjectHolderTests(TestRunner& tr);
 
+bool IsTrue(const ObjectHolder& oh);
+
 
 } /* namespace Runtime */
 

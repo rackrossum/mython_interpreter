@@ -47,4 +47,10 @@ bool ObjectHolder::IsSameType(const ObjectHolder& other) const
 {
     return data->GetType() == other->GetType();
 }
+
+
+bool IsTrue(const ObjectHolder& oh)
+{
+    return oh.Get()->IsTrue();
+}
 }

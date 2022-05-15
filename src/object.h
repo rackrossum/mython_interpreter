@@ -65,6 +65,8 @@ public:
     Number(int n)
         : ValueObject(Type::Number, n)
     {}
+
+    bool IsTrue() const override;
 };
 
 class Bool : public ValueObject<bool>
@@ -76,6 +78,8 @@ public:
     {}
 
     void Print(std::ostream& os) override;
+
+    bool IsTrue() const override;
 };
 
 class String : public ValueObject<std::string>
@@ -89,6 +93,8 @@ public:
     String(const std::string& str)
         : ValueObject(Type::String, str)
     {}
+
+    bool IsTrue() const override;
 };
 
 struct Method {
@@ -103,6 +109,8 @@ public:
   const Method* GetMethod(const std::string& name) const;
   const std::string& GetName() const;
   void Print(std::ostream& os) override;
+
+  bool IsTrue() const override;
 
 private:
   std::string name;
@@ -122,6 +130,8 @@ public:
   Closure& Fields();
   const Closure& Fields() const;
 
+  bool IsTrue() const override;
+
 private:
   const Class& cls;
   Closure fields;
@@ -132,6 +142,8 @@ class None : public Object
 public:
     explicit None();
     void Print(std::ostream& os) override;
+
+    bool IsTrue() const override;
 };
 
 void RunObjectsTests(TestRunner& test_runner);

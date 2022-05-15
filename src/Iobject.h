@@ -21,5 +21,6 @@ public:
   };
 
   virtual Type GetType() const = 0;
+  virtual bool IsTrue() const = 0;
 };
 }

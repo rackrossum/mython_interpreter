@@ -54,6 +54,11 @@ void Class::Print(ostream& os)
     os << this;
 }
 
+bool Class::IsTrue() const
+{
+    throw std::runtime_error("Class __bool__ not implemented");
+}
+
 // ClassInstance
 ClassInstance::ClassInstance(const Class& cls)
 : Object(Type::Instance), cls(cls)
@@ -102,6 +107,11 @@ ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<Ob
     return std::move(res);
 }
 
+bool ClassInstance::IsTrue() const
+{
+    throw std::runtime_error("ClassInstance __bool__ not implemented");
+}
+
 // None
 //
 None::None()
@@ -111,5 +121,25 @@ None::None()
 void None::Print(std::ostream& os)
 {
     os << "None";
+}
+
+bool None::IsTrue() const
+{
+    return false;
+}
+
+bool Number::IsTrue() const
+{
+    return value != 0;
+}
+
+bool String::IsTrue() const
+{
+    return !value.empty();
+}
+
+bool Bool::IsTrue() const
+{
+    return value;
 }
 } /* namespace Runtime */
