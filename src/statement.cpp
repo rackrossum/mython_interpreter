@@ -189,7 +189,7 @@ Result Print::Execute(Closure& closure)
         else
             (*output) << " ";
 
-        auto res = (*it)->Execute(closure).Get();
+        auto res = (*it)->Execute(closure);
         if (res)
             res->Print(*output);
         else
