@@ -116,6 +116,27 @@ print y.value
   ASSERT_EQUAL(output.str(), "2\n3\n");
 }
 
+void TestCase3()
+{
+    istringstream input(R"(
+x = 1
+xx = 2
+_xxx = 3
+x4 = 4
+x_5 = 5
+
+str_ = 'string'
+str_2 = str_
+str_3 = str_2
+
+print str(str_ + str_2 + str_3)
+)");
+ostringstream output;
+RunMythonProgram(input, output);
+
+ASSERT_EQUAL(output.str(), "stringstringstring\n");
+}
+
 void TestAll() {
   TestRunner tr;
   Runtime::RunObjectHolderTests(tr);
@@ -128,4 +149,5 @@ void TestAll() {
   RUN_TEST(tr, TestAssignments);
   RUN_TEST(tr, TestArithmetics);
   RUN_TEST(tr, TestVariablesArePointers);
+  RUN_TEST(tr, TestCase3);
 }
