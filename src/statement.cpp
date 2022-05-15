@@ -103,7 +103,7 @@ VariableValue::VariableValue(std::vector<std::string> dotted_ids)
 }
 
 
-ObjectHolder VariableValue::Execute(Closure& closure)
+Result VariableValue::Execute(Closure& closure)
 {
     using ObjType = decltype(ObjectHolder().GetType());
 
@@ -129,7 +129,7 @@ Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv)
         throw std::runtime_error("Assignment: var name is empty");
 }
 
-ObjectHolder Assignment::Execute(Closure& closure) 
+Result Assignment::Execute(Closure& closure) 
 {
     auto &obj = closure[var];
     obj = rv->Execute(closure);
@@ -148,7 +148,7 @@ FieldAssignment::FieldAssignment(
         Throw(FIELD_STR, "field name is empty");
 }
 
-ObjectHolder FieldAssignment::Execute(Runtime::Closure& closure)
+Result FieldAssignment::Execute(Runtime::Closure& closure)
 {
     auto pCls = object.Execute(closure);
     if (pCls->GetType() != Runtime::IObject::Type::Instance)
@@ -177,7 +177,7 @@ unique_ptr<Print> Print::Variable(std::string var)
     return std::make_unique<Print>(std::make_unique<VariableValue>(var));
 }
 
-ObjectHolder Print::Execute(Closure& closure) 
+Result Print::Execute(Closure& closure) 
 {
     auto it = args.begin();
     (*it++)->Execute(closure).Get()->Print(*output);
@@ -214,7 +214,7 @@ MethodCall::MethodCall(
 {
 }
 
-ObjectHolder MethodCall::Execute(Closure& closure)
+Result MethodCall::Execute(Closure& closure)
 {
     auto obj = object->Execute(closure);
     return obj.GetAs<Runtime::ClassInstance>()->Call(method, std::move(ActualizeArgs(args, closure)));
@@ -236,7 +236,7 @@ NewInstance::NewInstance(const Runtime::Class& class_)
 {
 }
 
-ObjectHolder NewInstance::Execute(Runtime::Closure& closure) 
+Result NewInstance::Execute(Runtime::Closure& closure) 
 {
     auto cls = Runtime::ClassInstance(class_);
     auto actualArgs = ActualizeArgs(args, closure);
@@ -249,7 +249,7 @@ ObjectHolder NewInstance::Execute(Runtime::Closure& closure)
 // Stringify
 //
 
-ObjectHolder Stringify::Execute(Closure& closure)
+Result Stringify::Execute(Closure& closure)
 {
     if (!argument)
         throw std::runtime_error("Stringify: no argument");
@@ -377,37 +377,37 @@ ObjectHolder CallOperator(ObjectHolder left, ObjectHolder right, Op op)
     throw std::runtime_error("No valid types for " + opToStr.at(op) + " operation");
 }
 
-ObjectHolder Add::Execute(Closure& closure) 
+Result Add::Execute(Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::Add);
 }
 
-ObjectHolder Sub::Execute(Closure& closure) 
+Result Sub::Execute(Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::Sub);
 }
 
-ObjectHolder Mult::Execute(Runtime::Closure& closure) 
+Result Mult::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::Mult);
 }
 
-ObjectHolder Div::Execute(Runtime::Closure& closure) 
+Result Div::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::Div);
 }
 
-ObjectHolder Or::Execute(Runtime::Closure& closure) 
+Result Or::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::Or);
 }
 
-ObjectHolder And::Execute(Runtime::Closure& closure) 
+Result And::Execute(Runtime::Closure& closure) 
 {
     auto left = lhs->Execute(closure), right = rhs->Execute(closure);
     return CallOperator(left, right, Op::And);
@@ -415,22 +415,25 @@ ObjectHolder And::Execute(Runtime::Closure& closure)
 
 // Compound
 
-ObjectHolder Compound::Execute(Closure& closure) 
+Result Compound::Execute(Closure& closure) 
 {
-    ObjectHolder res;
+    Result res;
     for (auto &st : statements)
     {
         res = st->Execute(closure);
-        if (dynamic_cast<Return*>(st.get()))
+        if (res.IsNeedToReturn())
             return res;
     }
 
-    return ObjectHolder();
+    return Result();
 }
 
-ObjectHolder Return::Execute(Closure& closure)
+// Return
+Result Return::Execute(Closure& closure)
 {
-    return statement->Execute(closure);
+    Result res(statement->Execute(closure));
+    res.SetNeedToReturn();
+    return res;
 }
 
 ClassDefinition::ClassDefinition(ObjectHolder class_)
@@ -438,11 +441,12 @@ ClassDefinition::ClassDefinition(ObjectHolder class_)
 {
 }
 
-ObjectHolder ClassDefinition::Execute(Runtime::Closure& closure) {
+Result ClassDefinition::Execute(Runtime::Closure& closure) {
     return cls;
 }
 
-
+// IfElse
+//
 IfElse::IfElse(
   std::unique_ptr<Statement> condition,
   std::unique_ptr<Statement> if_body,
@@ -452,14 +456,14 @@ IfElse::IfElse(
 {
 }
 
-ObjectHolder IfElse::Execute(Runtime::Closure& closure) {
+Result IfElse::Execute(Runtime::Closure& closure) {
     if (!condition)
         throw std::runtime_error("No condition in IfElseBlock");
 
     if (!if_body)
         throw std::runtime_error("No If Body in IfElseBlock");
 
-    ObjectHolder res;
+    Result res;
     if (condition->Execute(closure).GetAs<Runtime::Bool>()->GetValue() == true)
         res = if_body->Execute(closure);
     else if (else_body)
@@ -471,7 +475,7 @@ ObjectHolder IfElse::Execute(Runtime::Closure& closure) {
 // Not
 //
 
-ObjectHolder Not::Execute(Runtime::Closure& closure) {
+Result Not::Execute(Runtime::Closure& closure) {
 
     ObjectHolder res;
     auto obj = argument->Execute(closure);
@@ -498,7 +502,7 @@ Comparison::Comparison(
         throw std::runtime_error("Comparison: arguments are missed");
 }
 
-ObjectHolder Comparison::Execute(Runtime::Closure& closure) {
+Result Comparison::Execute(Runtime::Closure& closure) {
     return ObjectHolder::Own(Runtime::Bool(comparator(left->Execute(closure), right->Execute(closure))));
 }
 

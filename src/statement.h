@@ -14,9 +14,32 @@ class TestRunner;
 
 namespace Ast {
 
+struct Result : public ObjectHolder
+{
+    Result() = default;
+    Result(const ObjectHolder& oh)
+        : ObjectHolder(oh)
+    {}
+    Result(ObjectHolder&& oh)
+        : ObjectHolder(std::move(oh))
+    {}
+    bool IsNeedToReturn()
+    {
+        return needToReturn;
+    }
+
+    void SetNeedToReturn()
+    {
+        needToReturn = true;
+    }
+
+private:
+    bool needToReturn = false;
+};
+
 struct Statement {
   virtual ~Statement() = default;
-  virtual ObjectHolder Execute(Runtime::Closure& closure) = 0;
+  virtual Result Execute(Runtime::Closure& closure) = 0;
 
   template <typename T>
   T* TryAs()
@@ -32,7 +55,7 @@ struct ValueStatement : Statement {
   explicit ValueStatement(T v) : value(std::move(v)) {
   }
 
-  ObjectHolder Execute(Runtime::Closure&) override {
+  Result Execute(Runtime::Closure&) override {
     return ObjectHolder::Share(value);
   }
 };
@@ -46,7 +69,7 @@ struct VariableValue : Statement {
 
   explicit VariableValue(std::string var_name);
   explicit VariableValue(std::vector<std::string> dotted_ids);
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 struct Assignment : Statement {
@@ -54,7 +77,7 @@ struct Assignment : Statement {
   std::unique_ptr<Statement> rv;
 
   Assignment(std::string var, std::unique_ptr<Statement> rv);
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 struct FieldAssignment : Statement {
@@ -63,11 +86,11 @@ struct FieldAssignment : Statement {
   std::unique_ptr<Statement> right_value;
 
   FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv);
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 struct None : Statement {
-  ObjectHolder Execute(Runtime::Closure&) override {
+  Result Execute(Runtime::Closure&) override {
     return ObjectHolder();
   }
 };
@@ -79,7 +102,7 @@ public:
 
   static std::unique_ptr<Print> Variable(std::string name);
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
   static void SetOutputStream(std::ostream& output_stream);
 
@@ -99,7 +122,7 @@ struct MethodCall : Statement {
     std::vector<std::unique_ptr<Statement>> args
   );
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 struct NewInstance : Statement {
@@ -108,7 +131,7 @@ struct NewInstance : Statement {
 
   NewInstance(const Runtime::Class& class_);
   NewInstance(const Runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args);
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class UnaryOperation : public Statement {
@@ -125,7 +148,7 @@ protected:
 class Stringify : public UnaryOperation {
 public:
   using UnaryOperation::UnaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class BinaryOperation : public Statement {
@@ -145,43 +168,43 @@ protected:
 class Add : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Sub : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Mult : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Div : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Or : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class And : public BinaryOperation {
 public:
   using BinaryOperation::BinaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Not : public UnaryOperation {
 public:
   using UnaryOperation::UnaryOperation;
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 };
 
 class Compound : public Statement {
@@ -195,7 +218,7 @@ public:
     statements.push_back(std::move(stmt));
   }
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
 private:
   std::vector<std::unique_ptr<Statement>> statements;
@@ -208,7 +231,7 @@ public:
   {
   }
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
 private:
   std::unique_ptr<Statement> statement;
@@ -218,7 +241,7 @@ class ClassDefinition : public Statement {
 public:
   explicit ClassDefinition(ObjectHolder cls);
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
 private:
   ObjectHolder cls;
@@ -233,7 +256,7 @@ public:
     std::unique_ptr<Statement> else_body
   );
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
 private:
   std::unique_ptr<Statement> condition, if_body, else_body;
@@ -249,7 +272,7 @@ public:
     std::unique_ptr<Statement> rhs
   );
 
-  ObjectHolder Execute(Runtime::Closure& closure) override;
+  Result Execute(Runtime::Closure& closure) override;
 
 private:
   Comparator comparator;
