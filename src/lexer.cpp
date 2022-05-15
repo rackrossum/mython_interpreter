@@ -2,311 +2,247 @@
 
 #include <algorithm>
 #include <charconv>
-#include <cstdio>
-#include <optional>
-#include <string>
-#include <string_view>
 #include <unordered_map>
-#include <set>
 
 using namespace std;
 
-namespace 
-{
-    using namespace Parse;
-    std::unordered_map<std::string_view, Parse::Token> keywords
-    {
-        {"class",TokenType::Class()},
-        {"return", TokenType::Return()},
-        {"if", TokenType::If()},
-        {"else", TokenType::Else()},
-        {"def", TokenType::Def()},
-        {"print", TokenType::Print()},
-        {"and", TokenType::And()},
-        {"or", TokenType::Or()},
-        {"not", TokenType::Not()},
-        {"None", TokenType::None()},
-        {"True", TokenType::True()},
-        {"False", TokenType::False()}
-    };
-
-    std::unordered_map<std::string_view, Parse::Token> operators
-    {
-        {"\n", TokenType::Newline()},
-        {"==", TokenType::Eq()},
-        {"!=", TokenType::NotEq()},
-        {"<=", TokenType::LessOrEq()},
-        {">=", TokenType::GreaterOrEq()},
-        {"+", TokenType::Char{'+'}},
-        {"-", TokenType::Char{'-'}},
-        {"*", TokenType::Char{'*'}},
-        {"/", TokenType::Char{'/'}},
-        {".", TokenType::Char{'.'}},
-        {">", TokenType::Char{'>'}},
-        {"<", TokenType::Char{'<'}},
-        {",", TokenType::Char{','}},
-        {"(", TokenType::Char{'('}},
-        {")", TokenType::Char{')'}},
-        {"=", TokenType::Char{'='}},
-        {":", TokenType::Char{':'}},
-        {"?", TokenType::Char{'?'}}
-    };
-
-    std::string knownSymbols = "\n=+-*/.><,(): !?";
-    std::set<char> singleLetterTokens2 = {'\n', '=', '+', '-', '*', '/',
-        '.', '>', '<', ',', '(', ')', ':', ' '};
-}
-
 namespace Parse {
 
-    bool operator == (const Token& lhs, const Token& rhs) {
-        using namespace TokenType;
+bool operator == (const Token& lhs, const Token& rhs) {
+  using namespace TokenType;
 
-        if (lhs.index() != rhs.index()) {
-            return false;
-        }
-        if (lhs.Is<Char>()) {
-            return lhs.As<Char>().value == rhs.As<Char>().value;
-        } else if (lhs.Is<Number>()) {
-            return lhs.As<Number>().value == rhs.As<Number>().value;
-        } else if (lhs.Is<String>()) {
-            return lhs.As<String>().value == rhs.As<String>().value;
-        } else if (lhs.Is<Id>()) {
-            return lhs.As<Id>().value == rhs.As<Id>().value;
-        } else {
-            return true;
-        }
-    }
+  if (lhs.index() != rhs.index()) {
+    return false;
+  }
+  if (lhs.Is<Char>()) {
+    return lhs.As<Char>().value == rhs.As<Char>().value;
+  } else if (lhs.Is<Number>()) {
+    return lhs.As<Number>().value == rhs.As<Number>().value;
+  } else if (lhs.Is<String>()) {
+    return lhs.As<String>().value == rhs.As<String>().value;
+  } else if (lhs.Is<Id>()) {
+    return lhs.As<Id>().value == rhs.As<Id>().value;
+  } else {
+    return true;
+  }
+}
 
-    std::ostream& operator << (std::ostream& os, const Token& rhs) {
-        using namespace TokenType;
+std::ostream& operator << (std::ostream& os, const Token& rhs) {
+  using namespace TokenType;
 
 #define VALUED_OUTPUT(type) \
-        if (auto p = rhs.TryAs<type>()) return os << #type << '{' << p->value << '}';
+  if (auto p = rhs.TryAs<type>()) return os << #type << '{' << p->value << '}';
 
-        VALUED_OUTPUT(Number);
-        VALUED_OUTPUT(Id);
-        VALUED_OUTPUT(String);
-        VALUED_OUTPUT(Char);
+  VALUED_OUTPUT(Number);
+  VALUED_OUTPUT(Id);
+  VALUED_OUTPUT(String);
+  VALUED_OUTPUT(Char);
 
 #undef VALUED_OUTPUT
 
 #define UNVALUED_OUTPUT(type) \
-        if (rhs.Is<type>()) return os << #type;
+    if (rhs.Is<type>()) return os << #type;
 
-        UNVALUED_OUTPUT(Class);
-        UNVALUED_OUTPUT(Return);
-        UNVALUED_OUTPUT(If);
-        UNVALUED_OUTPUT(Else);
-        UNVALUED_OUTPUT(Def);
-        UNVALUED_OUTPUT(Newline);
-        UNVALUED_OUTPUT(Print);
-        UNVALUED_OUTPUT(Indent);
-        UNVALUED_OUTPUT(Dedent);
-        UNVALUED_OUTPUT(And);
-        UNVALUED_OUTPUT(Or);
-        UNVALUED_OUTPUT(Not);
-        UNVALUED_OUTPUT(Eq);
-        UNVALUED_OUTPUT(NotEq);
-        UNVALUED_OUTPUT(LessOrEq);
-        UNVALUED_OUTPUT(GreaterOrEq);
-        UNVALUED_OUTPUT(None);
-        UNVALUED_OUTPUT(True);
-        UNVALUED_OUTPUT(False);
-        UNVALUED_OUTPUT(Eof);
+  UNVALUED_OUTPUT(Class);
+  UNVALUED_OUTPUT(Return);
+  UNVALUED_OUTPUT(If);
+  UNVALUED_OUTPUT(Else);
+  UNVALUED_OUTPUT(Def);
+  UNVALUED_OUTPUT(Newline);
+  UNVALUED_OUTPUT(Print);
+  UNVALUED_OUTPUT(Indent);
+  UNVALUED_OUTPUT(Dedent);
+  UNVALUED_OUTPUT(And);
+  UNVALUED_OUTPUT(Or);
+  UNVALUED_OUTPUT(Not);
+  UNVALUED_OUTPUT(Eq);
+  UNVALUED_OUTPUT(NotEq);
+  UNVALUED_OUTPUT(LessOrEq);
+  UNVALUED_OUTPUT(GreaterOrEq);
+  UNVALUED_OUTPUT(None);
+  UNVALUED_OUTPUT(True);
+  UNVALUED_OUTPUT(False);
+  UNVALUED_OUTPUT(Eof);
 
 #undef UNVALUED_OUTPUT
 
-        return os << "Unknown token :(";
+  return os << "Unknown token :(";
+}
+
+
+const int IndentedReader::Eof = std::istream::traits_type::eof();
+
+IndentedReader::IndentedReader(istream& is) : input(is), line_number(0) {
+  NextLine();
+}
+
+int IndentedReader::Next() {
+  if (!input) {
+    return Eof;
+  }
+  char c;
+  if (current_line_input >> c) {
+    return c;
+  } else {
+    return '\n';
+  }
+}
+
+int IndentedReader::Get() {
+  if (!input) {
+    return Eof;
+  }
+  if (int c = current_line_input.get(); c != Eof) {
+    return c;
+  } else {
+    return '\n';
+  }
+}
+
+void IndentedReader::NextLine() {
+  auto is_space = [](char c) { return isspace(c); };
+
+  for (string line; getline(input, line); ) {
+    ++line_number;
+    auto it = find_if_not(begin(line), end(line), is_space);
+    if (it != end(line)) {
+      auto leading_spaces = it - begin(line);
+      if (leading_spaces % 2 == 1) {
+        throw LexerError("Odd number of spaces at the beginning of line " + line);
+      }
+      current_indent = leading_spaces / 2;
+      current_line_input = istringstream(string(it, end(line)));
+      return;
     }
+  }
+  // When input is exhausted we must set current_indent to zero to produce enough Dedent tokens
+  current_indent = 0;
+}
 
+Lexer::Lexer(std::istream& input)
+  : char_reader(input)
+  , cur_char(char_reader.Get())
+  , indent(0)
+  , current(NextTokenImpl())
+{
+}
 
-    Lexer::Lexer(std::istream& input)
-        : in(input)
-    {
-        token = NextToken();
+const Token& Lexer::CurrentToken() const {
+  return current;
+}
+
+Token Lexer::NextToken() {
+  current = NextTokenImpl();
+  return current;
+}
+
+Token Lexer::NextTokenImpl() {
+  using namespace TokenType;
+
+  static const unordered_map<string, Token> keywords = {
+    {"class", Class{}},
+    {"return", Return{}},
+    {"if", If{}},
+    {"else", Else{}},
+    {"def", Def{}},
+    {"print", Print{}},
+    {"and", And{}},
+    {"or", Or{}},
+    {"not", Not{}},
+    {"None", None{}},
+    {"True", True{}},
+    {"False", False{}},
+  };
+
+  if (indent > char_reader.CurrentIndent()) {
+    --indent;
+    return Dedent{};
+  } else if (indent < char_reader.CurrentIndent()) {
+    ++indent;
+    return Indent{};
+  }
+
+  if (cur_char == '\n') {
+    char_reader.NextLine();
+    cur_char = char_reader.Get();
+    return Newline{};
+  }
+
+  if (isspace(cur_char)) {
+    cur_char = char_reader.Next();
+  }
+
+  if (cur_char == IndentedReader::Eof) {
+    return Eof{};
+  } else if (isdigit(cur_char)) {
+    int value = 0;
+    while (isdigit(cur_char)) {
+      value = value * 10 + (cur_char - '0');
+      cur_char = char_reader.Get();
     }
-
-    void Lexer::ParseIndents(std::string_view line)
-    {
-        curIndent = line.find_first_not_of(" ");
-        if (curIndent == std::string_view::npos)
-            curIndent = 0;
-
-        if (curIndent % 2 != 0)
-            throw LexerError(__FUNCTION__);
-        curIndent /= 2;
-
-        for (int i = 0; i < std::abs(int(curIndent) - int(prevIndent)); ++i)
-        {
-            if (curIndent > prevIndent)
-                lineTokens.push_back(TokenType::Indent{});
-            else 
-                lineTokens.push_back(TokenType::Dedent{});
-        }
-
-        prevIndent = curIndent;
+    return Number{value};
+  } else if (cur_char == '"' || cur_char == '\'') {
+    auto opener = cur_char;
+    bool previous_backslash = false;
+    string value;
+    while (((cur_char = char_reader.Get()) != opener || previous_backslash) && cur_char != '\n') {
+      value += cur_char;
+      previous_backslash = (cur_char == '\\');
     }
-
-    const Token& Lexer::CurrentToken() const 
-    {
-        return token;
+    if (cur_char != opener) {
+      throw LexerError("String " + value + " has unbalanced quotes");
     }
+    cur_char = char_reader.Next();
+    return String{std::move(value)};
+  } else if (isalpha(cur_char) || cur_char == '_') {
+    string value;
+    do {
+      value += cur_char;
+      cur_char = char_reader.Get();
+    } while (isalnum(cur_char) || cur_char == '_');
 
-
-    Token Lexer::NextToken()
-    {
-        if (!lineTokens.empty())
-        {
-            token = lineTokens.front();
-            lineTokens.pop_front();
-            return token;
-        }
-
-        if (in.peek() == EOF)
-        {
-            if (!lastIndentCounted)
-            {
-                std::string_view _;
-                ParseIndents(_);
-                lastIndentCounted = true;
-                return NextToken();
-            }
-
-            return TokenType::Eof();
-        }
-
-        ParseLine();
-        return NextToken();
+    if (auto it = keywords.find(value); it != keywords.end()) {
+      return it->second;
+    } else {
+      return Id{std::move(value)};
     }
-
-    void Lexer::ParseLine() 
-    {
-        std::string line;
-
-        while ((in.peek() != EOF) && (line.find_first_not_of(" \n") == std::string::npos))
-        {
-            line = GetLine();
-        }
-
-
-        std::string_view svLine = line;
-
-        ParseIndents(svLine);
-
-        if (in.peek() == EOF)
-            lastIndentCounted = true;
-
-        while (!svLine.empty())
-        {
-            while (svLine.front() == ' ')
-                svLine.remove_prefix(1);
-
-            OToken str = TryParseString(svLine);
-            if (str)
-            {
-                lineTokens.push_back(str.value());
-                continue;
-            }
-
-            auto isSymbol = knownSymbols.find(svLine.front()) != std::string::npos;
-            auto pos = !isSymbol ?
-                svLine.find_first_of(knownSymbols, 1) :
-                svLine.find_first_not_of(knownSymbols, 1);
-
-            auto substr = svLine.substr(0, pos);
-            svLine.remove_prefix(substr.size());
-
-            if (isSymbol)
-            {
-                while (!substr.empty())
-                {
-                    while (substr.front() == ' ')
-                        substr.remove_prefix(1);
-
-                    OToken t = TryParseKnownToken(substr);
-                    if (t)
-                    {
-                        lineTokens.push_back(t.value());
-                    }
-                }
-            }
-            else
-                lineTokens.push_back(ParseUnknownToken(substr));
-        }
+  } else if (cur_char == '=') {
+    cur_char = char_reader.Get();
+    if (cur_char == '=') {
+      cur_char = char_reader.Next();
+      return Eq{};
+    } else {
+      return Char{'='};
     }
-
-    Lexer::OToken Lexer::TryParseKnownToken(std::string_view& s) const
-    {
-        auto lookUp = [&](size_t size)
-        {
-            Lexer::OToken t;
-            auto it = operators.find(s.substr(0, size));
-            if (it != operators.end())
-            {
-                t = it->second;
-                s.remove_prefix(it->first.size());
-            }
-
-            return t;
-        };
-
-        Lexer::OToken res = lookUp(2);
-        if (res)
-            return res;
-
-        res = lookUp(1);
-        if (res)
-            return res;
-
-        return nullopt;
+  } else if (cur_char == '!') {
+    cur_char = char_reader.Get();
+    if (cur_char == '=') {
+      cur_char = char_reader.Next();
+      return NotEq{};
+    } else {
+      return Char{'!'};
     }
-
-    Token Lexer::ParseUnknownToken(std::string_view s) const
-    {
-        int value;
-        auto [ptr, ec] { std::from_chars(s.data(), s.data() + s.size(), value) };
-        if (ec == std::errc())
-            return TokenType::Number{value};
-
-        auto it = keywords.find(s);
-        if (it != keywords.end())
-            return it->second;
-
-        return TokenType::Id{std::string(s)};
+  } else if (cur_char == '<') {
+    cur_char = char_reader.Get();
+    if (cur_char == '=') {
+      cur_char = char_reader.Next();
+      return LessOrEq{};
+    } else {
+      return Char{'<'};
     }
-
-    Lexer::OToken Lexer::TryParseString(std::string_view& s) const
-    {
-        if (s.size() < 2)
-            return nullopt;
-
-        auto start = s.front();
-        
-        if (start == '\"' || start == '\'')
-        {
-            auto end = s.find(start, 1);
-            if (end == s.npos)
-                throw LexerError(__FUNCTION__);
-            auto string = s.substr(1, end - 1);
-            s.remove_prefix(end + 1);
-            return TokenType::String{std::string(string)};
-        }
-
-        return nullopt;
+  } else if (cur_char == '>') {
+    cur_char = char_reader.Get();
+    if (cur_char == '=') {
+      cur_char = char_reader.Next();
+      return GreaterOrEq{};
+    } else {
+      return Char{'>'};
     }
-
-    std::string Lexer::GetLine() 
-    {
-        if (in.peek() == EOF)
-            return "";
- 
-        std::string res;
-        getline(in, res);
-        if (res != "")
-            res.push_back('\n');
-
-        return res;
-    }
+  } else {
+    Char result{static_cast<char>(cur_char)};
+    cur_char = char_reader.Next();
+    return result;
+  }
+}
 
 } /* namespace Parse */
