@@ -185,7 +185,11 @@ ObjectHolder Print::Execute(Closure& closure)
     for (auto end = args.end(); it != end; ++it)
     {
         (*output) << " ";
-        (*it)->Execute(closure).Get()->Print(*output);
+        auto res = (*it)->Execute(closure).Get();
+        if (res)
+            res->Print(*output);
+        else
+            Runtime::None{}.Print(*output);
     }
     (*output) << std::endl;
 
