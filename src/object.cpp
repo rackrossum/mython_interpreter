@@ -99,7 +99,7 @@ ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<Ob
         tempClosure[met->formal_params[i]] = actual_args[i];
 
     auto res = met->body->Execute(tempClosure);
-    return res;
+    return std::move(res);
 }
 
 // None

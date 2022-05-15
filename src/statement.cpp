@@ -105,8 +105,6 @@ VariableValue::VariableValue(std::vector<std::string> dotted_ids)
 
 Result VariableValue::Execute(Closure& closure)
 {
-    using ObjType = decltype(ObjectHolder().GetType());
-
     auto& inner = GetClosure(closure, dotted_ids, VAR_STR);
 
     auto it = inner.find(dotted_ids.back());

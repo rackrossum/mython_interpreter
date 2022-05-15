@@ -37,7 +37,8 @@ private:
     bool needToReturn = false;
 };
 
-struct Statement {
+class Statement {
+public:
   virtual ~Statement() = default;
   virtual Result Execute(Runtime::Closure& closure) = 0;
 
