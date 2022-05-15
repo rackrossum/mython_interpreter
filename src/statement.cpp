@@ -179,17 +179,22 @@ unique_ptr<Print> Print::Variable(std::string var)
 
 Result Print::Execute(Closure& closure) 
 {
-    auto it = args.begin();
-    (*it++)->Execute(closure).Get()->Print(*output);
-
-    for (auto end = args.end(); it != end; ++it)
+    bool first = true;
+    for (auto it = args.begin(); it != args.end(); ++it)
     {
-        (*output) << " ";
+        if (first)
+        {
+            first = false;
+        }
+        else
+            (*output) << " ";
+
         auto res = (*it)->Execute(closure).Get();
         if (res)
             res->Print(*output);
         else
             Runtime::None{}.Print(*output);
+
     }
     (*output) << std::endl;
 
