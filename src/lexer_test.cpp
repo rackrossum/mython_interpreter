@@ -336,6 +336,33 @@ void TestAlwaysEmitsNewlineAtTheEndOfNonemptyLine() {
   }
 }
 
+void TestMultiPrint()
+{
+    istringstream input(R"(
+n = "world"
+print x + y, z + n
+)");
+    Lexer lexer(input);
+ 
+    using namespace TokenType;
+    ASSERT_EQUAL(lexer.CurrentToken(), Token(TokenType::Id{"n"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Char{'='}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::String{"world"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Newline{}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Print{}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Id{"x"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Char{'+'}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Id{"y"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Char{','}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Id{"z"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Char{'+'}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Id{"n"}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Newline{}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Eof{}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Eof{}));
+    ASSERT_EQUAL(lexer.NextToken(), Token(TokenType::Eof{}));
+}
+
 void RunLexerTests(TestRunner& tr) {
   RUN_TEST(tr, Parse::TestSimpleAssignment);
   RUN_TEST(tr, Parse::TestKeywords);
@@ -350,6 +377,7 @@ void RunLexerTests(TestRunner& tr) {
   RUN_TEST(tr, Parse::TestExpectNext);
   RUN_TEST(tr, Parse::TestMythonProgram);
   RUN_TEST(tr, Parse::TestAlwaysEmitsNewlineAtTheEndOfNonemptyLine);
+  RUN_TEST(tr, Parse::TestMultiPrint);
 }
 
 } /* namespace Parse */

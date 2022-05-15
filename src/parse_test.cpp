@@ -36,6 +36,32 @@ print x + y, z + n
   ASSERT_EQUAL(os.str(), "9 hello, world\n");
 }
 
+void TestStringify()
+{
+  const string program = R"(
+program_name = "Classes test"
+
+class A:
+  def __init__():
+    self.x = 0
+
+  def __str__():
+    return str(self.x)
+
+cls = A()
+print cls
+)";
+
+  ostringstream os;
+  Ast::Print::SetOutputStream(os);
+
+  Runtime::Closure closure;
+  auto tree = ParseProgramFromString(program);
+  tree->Execute(closure);
+
+  ASSERT_EQUAL(os.str(), "0\n");
+}
+
 void TestProgramWithClasses() {
   const string program = R"(
 program_name = "Classes test"
@@ -261,6 +287,7 @@ print r, c, t1, t2
 
 void TestParseProgram(TestRunner& tr) {
   RUN_TEST(tr, Parse::TestSimpleProgram);
+  RUN_TEST(tr, Parse::TestStringify);
   RUN_TEST(tr, Parse::TestProgramWithClasses);
   RUN_TEST(tr, Parse::TestProgramWithIf);
   RUN_TEST(tr, Parse::TestReturnFromIf);
