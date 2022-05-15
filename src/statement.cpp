@@ -494,7 +494,7 @@ Comparison::Comparison(
 ) 
     : comparator(std::move(cmp)), left(std::move(lhs)), right(std::move(rhs))
 {
-    if (!lhs || !rhs)
+    if (!left || !right)
         throw std::runtime_error("Comparison: arguments are missed");
 }
 
