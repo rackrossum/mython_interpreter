@@ -17,7 +17,6 @@ parse.cpp
 parse_test.cpp
 statement.cpp
 statement_test.cpp
-test_cases.cpp
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -std=c++17)
