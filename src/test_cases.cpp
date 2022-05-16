@@ -271,4 +271,5 @@ void TestCases(TestRunner& tr)
   RUN_TEST(tr, TestVariablesArePointers);
   RUN_TEST(tr, TestCase3);
   RUN_TEST(tr, TestCase6);
+  RUN_TEST(tr, TestCase8);
 }
