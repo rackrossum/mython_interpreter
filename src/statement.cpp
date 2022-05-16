@@ -447,16 +447,23 @@ Result Not::Execute(Runtime::Closure& closure) {
 
     ObjectHolder res;
     auto obj = argument->Execute(closure);
-    if (obj.TryAs<Runtime::Bool>() != nullptr)
-        return ObjectHolder::Own(Runtime::Bool(!obj.GetAs<Runtime::Bool>()->GetValue()));
+    if (!obj)
+        Throw("Not", "object is nullptr");
 
-    const char* notName = "__not__";
+    if (obj.GetType() != Runtime::IObject::Type::Instance)
+    {
+        return ObjectHolder::Own(Runtime::Bool(!(obj->IsTrue())));
+    }
+    else
+    {
+        const char* notName = "__not__";
 
-    auto cls = obj.GetAs<Runtime::ClassInstance>();
-    if (!cls->HasMethod(notName, 0))
-        throw std::runtime_error("Not: cls has no such method");
+        auto cls = obj.GetAs<Runtime::ClassInstance>();
+        if (!cls->HasMethod(notName, 0))
+            throw std::runtime_error("Not: cls has no such method");
 
-    return cls->Call(notName, {});
+        return cls->Call(notName, {});
+    }
 }
 
 // Comparison
