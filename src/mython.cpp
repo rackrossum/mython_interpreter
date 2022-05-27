@@ -21,14 +21,24 @@ void TestAll();
 void RunMythonProgram(istream& input, ostream& output);
 
 int main() {
+	int errcode = 0;
+	try {
 #ifdef TEST
-  TestAll();
+		TestAll();
 #endif
 
-
-  RunMythonProgram(cin, cout);
-
-  return 0;
+		RunMythonProgram(cin, cout);
+		
+		return 0;
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;	
+		errcode = -1;
+	}
+	std::cout << "Press any key to continue..." << std::endl;
+	std::getchar();
+	return errcode;
 }
 
 void TestCases(TestRunner&);
