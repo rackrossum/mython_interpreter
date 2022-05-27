@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <map>
 #include <string>
+#include <optional>
 
 using namespace std;
 namespace
