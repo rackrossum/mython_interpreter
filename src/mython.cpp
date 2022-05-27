@@ -25,11 +25,11 @@ int main() {
 	try {
 #ifdef TEST
 		TestAll();
+		std::cout << "\n\n\n";
 #endif
-
+		std::cout << "This is Mython intepreter. Indent is 2 spaces.\n";
+		std::cout << "Type in EOF command after input(CTRL+d for Linux, CTRL+z for Windows)\n";
 		RunMythonProgram(cin, cout);
-		
-		return 0;
 	}
 	catch (std::exception& e)
 	{
