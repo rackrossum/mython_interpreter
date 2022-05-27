@@ -36,8 +36,11 @@ int main() {
 		std::cerr << e.what() << std::endl;	
 		errcode = -1;
 	}
+	
+#ifdef _WIN32  
 	std::cout << "Press any key to continue..." << std::endl;
 	std::getchar();
+#endif
 	return errcode;
 }
 
